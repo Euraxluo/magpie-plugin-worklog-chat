@@ -68,7 +68,7 @@
     <div id="top">
       <span class="title" id="title">新对话</span>
       <label style="font-size:11px;color:var(--magpie-muted,GrayText)">模型</label>
-      <select id="model"><option value="">自动</option></select>
+      <select id="model"><option value="group/glm-5.3" selected>group/glm-5.3</option><option value="">auto（慢，带全 skills）</option></select>
       <button id="toggle-search" title="magpie 会话搜索">🔍 搜会话</button>
       <button id="export">📄 导出</button>
     </div>
@@ -181,7 +181,7 @@
     const r = await api("GET", "/api/models").catch(() => ({ models: [] }));
     models = r.models || [];
     const sel = $("model");
-    for (const m of ["自动", ...models]) { const o = document.createElement("option"); o.value = m === "自动" ? "" : m; o.textContent = m; sel.appendChild(o); }
+    for (const m of models) { if (m === "group/glm-5.3") continue; const o = document.createElement("option"); o.value = m; o.textContent = m; sel.appendChild(o); }
     await refreshThreads();
     if (models.length === 0) toast("magpie 网关未响应，模型列表为空（仍可用「自动」）");
   })();
