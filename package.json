@@ -1,0 +1,47 @@
+{
+  "name": "magpie-plugin-worklog-chat",
+  "version": "0.2.0",
+  "description": "周报工坊：fork 自 magpie-chat（UI 原样保留），底层聊天循环换成 fx coding agent（模型走 magpie 可随时切），每轮落引擎无关的可移植 thread.jsonl。A fork of magpie-chat with an fx-powered chat loop and portable thread history.",
+  "author": "Euraxluo (https://github.com/Euraxluo), fork of Magic_zero (https://github.com/Magiczerowxy)",
+  "keywords": [
+    "magpie",
+    "magpie-page",
+    "magpie-plugin",
+    "fx",
+    "weekly-report",
+    "portable-history"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Euraxluo/magpie-plugin-worklog-chat.git"
+  },
+  "engines": {
+    "magpie": ">=0.1.1340"
+  },
+  "magpie": {
+    "icon": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjggMTI4IiB3aWR0aD0iMTI4IiBoZWlnaHQ9IjEyOCI+CiAgPHJlY3Qgd2lkdGg9IjEyOCIgaGVpZ2h0PSIxMjgiIHJ4PSIyOCIgZmlsbD0iIzRmNDZlNSIvPgogIDxwYXRoIGQ9Ik0zMCAzOGg2OGE4IDggMCAwIDEgOCA4djM0YTggOCAwIDAgMS04IDhINjBsLTE2IDE0di0xNGgtMTRhOCA4IDAgMCAxLTgtOFY0NmE4IDggMCAwIDEgOC04eiIgZmlsbD0iI2ZmZiIvPgogIDxnIGZpbGw9IiM0ZjQ2ZTUiPgogICAgPGNpcmNsZSBjeD0iNDYiIGN5PSI1OCIgcj0iNSIvPgogICAgPGNpcmNsZSBjeD0iNjQiIGN5PSI1OCIgcj0iNSIvPgogICAgPGNpcmNsZSBjeD0iODIiIGN5PSI1OCIgcj0iNSIvPgogIDwvZz4KPC9zdmc+Cg==",
+    "page": {
+      "title": "Worklog Chat",
+      "titles": {
+        "zh": "周报工坊",
+        "zh-TW": "週報工坊",
+        "ja": "週報ワークショップ"
+      },
+      "file": "page/index.html",
+      "icon": "assets/icon.svg",
+      "service": {
+        "port": 3493,
+        "option": "port"
+      }
+    },
+    "options": {
+      "port": 3493
+    }
+  },
+  "scripts": {
+    "start": "node serve.mjs"
+  },
+  "main": "./index.mjs",
+  "type": "module"
+}
