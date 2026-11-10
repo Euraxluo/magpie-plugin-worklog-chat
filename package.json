@@ -1,0 +1,16 @@
+{
+  "name": "magpie-plugin-worklog-chat",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "周报工坊：fork magpie-chat 的对话 UI，底层聊天循环用 fx（模型走 magpie 可随时切）；对话历史存成引擎无关的可移植 JSONL，另有 magpie 会话搜索工具喂给周报/绩效 skill。",
+  "magpie": {
+    "page": {
+      "title": "周报工坊",
+      "icon": "💬",
+      "file": "page/index.html"
+    }
+  },
+  "keywords": ["magpie-plugin", "weekly-report", "fx", "chat"],
+  "license": "MIT"
+}

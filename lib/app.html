@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>周报工坊</title>
+<style>
+  :root { color-scheme: light dark; }
+  * { box-sizing: border-box; }
+  html, body { margin:0; height:100%; background: var(--magpie-bg, Canvas); color: var(--magpie-fg, CanvasText);
+    font: 13px/1.55 var(--magpie-font, -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif);
+    -webkit-font-smoothing: antialiased; }
+  #app { display:flex; height:100vh; }
+  /* 会话列表 */
+  #side { width:230px; flex:none; border-right:1px solid var(--magpie-line, ButtonBorder); display:flex; flex-direction:column; }
+  #side header { padding:10px 12px 6px; display:flex; align-items:center; gap:6px; }
+  #side h1 { font-size:13px; font-weight:650; margin:0; flex:1; }
+  #threads { flex:1; overflow-y:auto; padding:4px 6px; }
+  .th { padding:7px 9px; border-radius:7px; cursor:pointer; display:flex; gap:6px; align-items:center; }
+  .th:hover { background: var(--magpie-card, ButtonFace); }
+  .th.on { background: var(--magpie-accent-soft, Highlight); color: var(--magpie-accent, HighlightText); }
+  .th .t { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px; }
+  .th .x { opacity:0; font-size:11px; padding:0 3px; }
+  .th:hover .x { opacity:.6; }
+  /* 主区 */
+  #main { flex:1; display:flex; flex-direction:column; min-width:0; }
+  #top { padding:8px 14px; border-bottom:1px solid var(--magpie-line, ButtonBorder); display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  #top .title { font-weight:600; font-size:13px; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  select, button, input { font:inherit; color:inherit; background:var(--magpie-card, ButtonFace);
+    border:1px solid var(--magpie-line, ButtonBorder); border-radius:6px; padding:3px 9px; }
+  button { cursor:pointer; } button:hover:not(:disabled){ border-color:var(--magpie-muted); } button:disabled{opacity:.4;cursor:default;}
+  #msgs { flex:1; overflow-y:auto; padding:16px 18px; display:flex; flex-direction:column; gap:12px; }
+  .m { max-width:82%; padding:9px 13px; border-radius:12px; white-space:pre-wrap; word-break:break-word; }
+  .m.user { align-self:flex-end; background:var(--magpie-accent-soft, Highlight); color:var(--magpie-accent, HighlightText); border-bottom-right-radius:4px; }
+  .m.assistant { align-self:flex-start; background:var(--magpie-card, ButtonFace); border:1px solid var(--magpie-line, ButtonBorder); border-bottom-left-radius:4px; }
+  .m .meta { font-size:10px; opacity:.65; margin-top:4px; }
+  .hint { align-self:center; font-size:11px; color:var(--magpie-muted, GrayText); border:1px dashed var(--magpie-line, ButtonBorder); border-radius:8px; padding:6px 12px; max-width:90%; }
+  #inputbar { padding:10px 14px 14px; border-top:1px solid var(--magpie-line, ButtonBorder); display:flex; gap:8px; }
+  #prompt { flex:1; resize:none; min-height:52px; max-height:200px; font:inherit; }
+  #send { align-self:flex-end; padding:8px 18px; font-weight:600; }
+  .spin { display:inline-block; width:12px; height:12px; border:2px solid var(--magpie-line, ButtonBorder);
+    border-top-color:var(--magpie-accent, Highlight); border-radius:99px; animation:sp .7s linear infinite; vertical-align:-1px; }
+  @keyframes sp { to { transform:rotate(360deg); } }
+  #toast { position:fixed; left:50%; bottom:78px; transform:translateX(-50%); background:var(--magpie-card, ButtonFace);
+    border:1px solid var(--magpie-line, ButtonBorder); border-radius:8px; padding:7px 14px; font-size:12px;
+    box-shadow:0 4px 16px rgba(0,0,0,.18); display:none; max-width:80vw; z-index:9; }
+  /* 搜索抽屉 */
+  #drawer { width:0; flex:none; overflow:hidden; border-left:1px solid var(--magpie-line, ButtonBorder); transition:width .15s; display:flex; flex-direction:column; }
+  #drawer.open { width:300px; }
+  #drawer .dh { padding:10px 12px 6px; font-weight:600; font-size:12px; display:flex; align-items:center; gap:6px; }
+  #drawer input { width:150px; }
+  #dhits { flex:1; overflow-y:auto; padding:4px 10px; font-size:11px; }
+  .hit { padding:6px 8px; border:1px solid var(--magpie-line, ButtonBorder); border-radius:7px; margin-bottom:6px; cursor:pointer; }
+  .hit:hover { border-color: var(--magpie-accent, Highlight); }
+  .hit .a { font-weight:600; font-size:10px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="side">
+    <header><h1>💬 周报工坊</h1><button id="new" title="新对话">＋</button></header>
+    <div id="threads"></div>
+    <div style="padding:8px 12px; border-top:1px solid var(--magpie-line,ButtonBorder)">
+      <button id="import-codex" style="width:100%; font-size:11px;">📥 导入 codex 周报方法论对话</button>
+    </div>
+  </div>
+  <div id="main">
+    <div id="top">
+      <span class="title" id="title">新对话</span>
+      <label style="font-size:11px;color:var(--magpie-muted,GrayText)">模型</label>
+      <select id="model"><option value="">自动</option></select>
+      <button id="toggle-search" title="magpie 会话搜索">🔍 搜会话</button>
+      <button id="export">📄 导出</button>
+    </div>
+    <div id="msgs"></div>
+    <div id="inputbar">
+      <textarea id="prompt" placeholder="和 fx 聊周报：比如「用 weekly-reporting-system 的方法，把本周 codex 里 ztocc 相关的会话整理成周报草稿」…（Enter 发送，Shift+Enter 换行）"></textarea>
+      <button id="send">发送</button>
+    </div>
+  </div>
+  <div id="drawer">
+    <div class="dh">🔍 magpie 会话 <button id="dclose" style="margin-left:auto">✕</button></div>
+    <div class="dh"><input id="dq" placeholder="关键词（单词最好）"> <select id="dagent"><option value="">全部</option><option>claude</option><option>codex</option><option>omp</option><option>opencode</option><option>cursor</option></select></div>
+    <div id="dhits"></div>
+  </div>
+</div>
+<div id="toast"></div>
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  let current = null, models = [];
+  function toast(msg, ms = 4000) { const t = $("toast"); t.textContent = msg; t.style.display = "block"; clearTimeout(t._t); t._t = setTimeout(() => t.style.display = "none", ms); }
+  async function api(method, path, body) {
+    const res = await fetch(path, { method, headers: { "content-type": "application/json" }, body: body ? JSON.stringify(body) : undefined });
+    const j = await res.json().catch(() => ({ error: "HTTP " + res.status }));
+    if (!res.ok) throw new Error(j.error || res.status);
+    return j;
+  }
+  try {
+    const q = new URLSearchParams(location.search);
+    const t = q.get("tokens");
+    if (t) { const slim = JSON.parse(decodeURIComponent(escape(atob(t)))); for (const [k, v] of Object.entries(slim || {})) document.documentElement.style.setProperty("--magpie-" + k, v); }
+    if (q.get("theme")) document.documentElement.style.colorScheme = q.get("theme");
+  } catch { }
+  const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+  async function refreshThreads() {
+    const r = await api("GET", "/api/threads");
+    $("threads").innerHTML = r.threads.map((t) =>
+      `<div class="th ${t.id === current ? "on" : ""}" data-id="${t.id}"><span class="t">${esc(t.title || t.id)}</span><span class="x" data-del="${t.id}">✕</span></div>`).join("");
+    for (const el of $("threads").querySelectorAll(".th")) el.onclick = (e) => {
+      if (e.target.dataset.del) return del(e.target.dataset.del);
+      open(el.dataset.id);
+    };
+  }
+  async function open(id) {
+    current = id;
+    const r = await api("GET", "/api/thread?id=" + encodeURIComponent(id));
+    $("title").textContent = (r.messages.find((m) => m.role === "user") || {}).text?.slice(0, 40) || id;
+    $("msgs").innerHTML = r.messages.map(renderMsg).join("") || '<div class="hint">（空对话）发第一条消息开始</div>';
+    $("msgs").scrollTop = 1e9;
+    refreshThreads();
+  }
+  function renderMsg(m) {
+    return `<div class="m ${m.role}">${esc(m.text)}<div class="meta">${m.role}${m.model ? " · " + m.model : ""}${m.engine ? " · " + m.engine : ""}</div></div>`;
+  }
+  async function del(id) { await api("DELETE", "/api/thread?id=" + encodeURIComponent(id)); if (current === id) { current = null; $("msgs").innerHTML = ""; $("title").textContent = "新对话"; } refreshThreads(); }
+
+  let busy = false;
+  async function send() {
+    const text = $("prompt").value.trim();
+    if (!text || busy) return;
+    busy = true; $("send").disabled = true; $("prompt").value = "";
+    $("msgs").insertAdjacentHTML("beforeend", renderMsg({ role: "user", text }));
+    $("msgs").insertAdjacentHTML("beforeend", `<div class="hint" id="thinking"><span class="spin"></span> fx 思考中（模型 ${$("model").value || "自动"}）…</div>`);
+    $("msgs").scrollTop = 1e9;
+    try {
+      const r = await api("POST", "/api/chat", { threadId: current, prompt: text, model: $("model").value || undefined });
+      $("thinking")?.remove();
+      if (!r.ok) { toast("失败: " + (r.error || "?"), 8000); return; }
+      current = r.threadId;
+      $("msgs").insertAdjacentHTML("beforeend", renderMsg({ role: "assistant", text: r.text, model: r.model, engine: "fx" }));
+      $("msgs").scrollTop = 1e9;
+      refreshThreads();
+    } catch (e) { $("thinking")?.remove(); toast("发送失败: " + e.message, 8000); }
+    finally { busy = false; $("send").disabled = false; $("prompt").focus(); }
+  }
+  $("send").onclick = send;
+  $("prompt").onkeydown = (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } };
+  $("new").onclick = () => { current = null; $("msgs").innerHTML = '<div class="hint">新对话：历史存在插件自己的库里，模型随便换，随时可导出。</div>'; $("title").textContent = "新对话"; };
+  $("import-codex").onclick = async () => {
+    const r = await api("POST", "/api/import", { preset: "codex-baohe" });
+    toast(r.ok ? `已导入 ${r.count} 条（codex 周报方法论）` : "导入失败: " + r.error);
+    if (r.ok) open(r.threadId);
+  };
+  $("export").onclick = async () => {
+    if (!current) return toast("先选一个对话");
+    const r = await api("GET", "/api/export?id=" + encodeURIComponent(current));
+    const blob = new Blob([r.markdown], { type: "text/markdown" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = current + ".md"; a.click();
+  };
+  $("toggle-search").onclick = () => { $("drawer").classList.toggle("open"); if ($("drawer").classList.contains("open")) doSearch(); };
+  $("dclose").onclick = () => $("drawer").classList.remove("open");
+  $("dq").onkeydown = (e) => { if (e.key === "Enter") doSearch(); };
+  async function doSearch() {
+    const q = $("dq").value.trim();
+    if (!q) { $("dhits").innerHTML = '<div class="hint">输入关键词</div>'; return; }
+    $("dhits").innerHTML = '<div class="hint"><span class="spin"></span> 搜索中…</div>';
+    const agents = $("dagent").value ? "&agents=" + $("dagent").value : "";
+    const r = await api("GET", "/api/sessions?q=" + encodeURIComponent(q) + agents + "&limit=30");
+    $("dhits").innerHTML = (r.hits || []).map((h, i) =>
+      `<div class="hit" data-i="${i}"><span class="a">${h.agent} · ${h.role}/${h.kind}</span><br>${esc(h.text.slice(0, 180))}</div>`).join("") || '<div class="hint">无命中</div>';
+    for (const el of $("dhits").querySelectorAll(".hit")) el.onclick = () => {
+      const h = r.hits[el.dataset.i];
+      $("prompt").value = `参考这个 magpie 会话片段（${h.agent}）：${h.text.slice(0, 300)}\n\n`;
+      $("prompt").focus();
+    };
+  }
+  (async () => {
+    const r = await api("GET", "/api/models").catch(() => ({ models: [] }));
+    models = r.models || [];
+    const sel = $("model");
+    for (const m of ["自动", ...models]) { const o = document.createElement("option"); o.value = m === "自动" ? "" : m; o.textContent = m; sel.appendChild(o); }
+    await refreshThreads();
+    if (models.length === 0) toast("magpie 网关未响应，模型列表为空（仍可用「自动」）");
+  })();
+})();
+</script>
+</body>
+</html>
